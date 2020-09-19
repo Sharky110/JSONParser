@@ -1,6 +1,6 @@
 ﻿namespace JSONparser.Models
 {
-    class Task
+    class Work
     {
         public int userId { get; set; }
         public string id { get; set; }
