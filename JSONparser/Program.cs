@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using JSONparser.Models;
 
 namespace JSONparser
 {
@@ -18,7 +15,7 @@ namespace JSONparser
        
         private const int NumOfLastPosts = 5;
 
-        private static RestApiProvider RestApiProvider = new RestApiProvider(BaseUrl);
+        private static UserInfo UserInfo = new UserInfo(BaseUrl, NumOfLastPosts);
 
         static void Main(string[] args)
         {
@@ -33,13 +30,13 @@ namespace JSONparser
                     continue;
                 }
 
-                var username = GetUsername(userId);
+                var username = UserInfo.GetUsername(userId);
 
                 if (string.IsNullOrEmpty(username))
                     continue;
 
-                var CompletedWorkTask = Task.Run(() => GetCompletedWork(userId, WorkResource));
-                var LastPostsTask = Task.Run(() => GetLastPosts(userId, PostsResource));
+                var CompletedWorkTask = Task.Run(() => UserInfo.GetCompletedWork(userId, WorkResource));
+                var LastPostsTask = Task.Run(() => UserInfo.GetLastPosts(userId, PostsResource));
 
                 if (!Task.WaitAll(new Task[] { CompletedWorkTask, LastPostsTask }, 5000))
                 {
@@ -71,35 +68,6 @@ namespace JSONparser
         private static void SaveToFile(string output)
         {
             File.WriteAllText(Filename, output);
-        }
-
-        private static string GetLastPosts(int userId, string resource)
-        {
-            var postsResponse = RestApiProvider.GetData<List<Post>>(resource);
-            var lastPosts = postsResponse.Data.Where(p => p.userId == userId).TakeLast(NumOfLastPosts);
-            var posts = string.Join('\n', lastPosts.Select(p => p.title));
-            return posts;
-        }
-
-        private static string GetCompletedWork(int userId, string resource)
-        {
-            var tasksResponse = RestApiProvider.GetData<List<Work>>(resource);
-            var completedTasks = tasksResponse.Data.Where(t => t.userId == userId && t.completed);
-            var tasks = string.Join('\n', completedTasks.Select(t => t.title));
-            return tasks;
-        }
-
-        private static string GetUsername(int userId)
-        {
-            var usersResponse = RestApiProvider.GetData<User>($"users//{userId}");
-
-            if (usersResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
-            {
-                Console.WriteLine("Пользователь с таким id не найден. Попробуйте еще раз.");
-                return null;
-            }
-
-            return usersResponse.Data.username;
         }
 
         static void SendMail(string messageBody)
