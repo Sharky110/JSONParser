@@ -14,7 +14,7 @@ namespace JSONparser
         private const string PostsResource = "posts";
         private const string Filename = "Список действий.txt";
         private const string AskSendMail = "Отправить письмо? (y/n)";
-        private const string AskSaveFile = "Список действий.txt";
+        private const string AskSaveFile = "Сохранить на диск? (y/n)";
        
         private const int NumOfLastPosts = 5;
 
