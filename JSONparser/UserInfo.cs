@@ -9,32 +9,34 @@ namespace JSONparser
     {
         private RestApiProvider RestApiProvider;
         private int NumOfLastPosts;
+        private int UserId;
 
-        public UserInfo(string BaseUrl, int LastPosts)
+        public UserInfo(string BaseUrl, int userId, int LastPosts)
         {
             RestApiProvider = new RestApiProvider(BaseUrl);
             NumOfLastPosts = LastPosts;
+            UserId = userId;
         }
 
-        public string GetLastPosts(int userId, string resource)
+        public string GetLastPosts(string resource)
         {
             var postsResponse = RestApiProvider.GetData<List<Post>>(resource);
-            var lastPosts = postsResponse.Data.Where(p => p.userId == userId).TakeLast(NumOfLastPosts);
+            var lastPosts = postsResponse.Data.Where(p => p.userId == UserId).TakeLast(NumOfLastPosts);
             var posts = string.Join('\n', lastPosts.Select(p => p.title));
             return posts;
         }
 
-        public string GetCompletedWork(int userId, string resource)
+        public string GetCompletedWork(string resource)
         {
             var tasksResponse = RestApiProvider.GetData<List<Work>>(resource);
-            var completedTasks = tasksResponse.Data.Where(t => t.userId == userId && t.completed);
+            var completedTasks = tasksResponse.Data.Where(t => t.userId == UserId && t.completed);
             var tasks = string.Join('\n', completedTasks.Select(t => t.title));
             return tasks;
         }
 
-        public string GetUsername(int userId)
+        public string GetUsername()
         {
-            var usersResponse = RestApiProvider.GetData<User>($"users//{userId}");
+            var usersResponse = RestApiProvider.GetData<User>($"users//{UserId}");
 
             if (usersResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
             {

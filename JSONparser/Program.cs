@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -10,12 +11,8 @@ namespace JSONparser
         private const string WorkResource = "todos";
         private const string PostsResource = "posts";
         private const string Filename = "Список действий.txt";
-        private const string AskSendMail = "Отправить письмо? (y/n)";
-        private const string AskSaveFile = "Сохранить на диск? (y/n)";
        
         private const int NumOfLastPosts = 5;
-
-        private static UserInfo UserInfo = new UserInfo(BaseUrl, NumOfLastPosts);
 
         static void Main(string[] args)
         {
@@ -30,13 +27,14 @@ namespace JSONparser
                     continue;
                 }
 
-                var username = UserInfo.GetUsername(userId);
+                var UserInfo = new UserInfo(BaseUrl, userId, NumOfLastPosts);
+                var username = UserInfo.GetUsername();
 
                 if (string.IsNullOrEmpty(username))
                     continue;
 
-                var CompletedWorkTask = Task.Run(() => UserInfo.GetCompletedWork(userId, WorkResource));
-                var LastPostsTask = Task.Run(() => UserInfo.GetLastPosts(userId, PostsResource));
+                var CompletedWorkTask = Task.Run(() => UserInfo.GetCompletedWork(WorkResource));
+                var LastPostsTask = Task.Run(() => UserInfo.GetLastPosts(PostsResource));
 
                 if (!Task.WaitAll(new Task[] { CompletedWorkTask, LastPostsTask }, 5000))
                 {
@@ -50,29 +48,33 @@ namespace JSONparser
 
                 Console.WriteLine(output);
 
-                AskQuestion(SendMail, AskSendMail, output);
-                AskQuestion(SaveToFile, AskSaveFile, output);
+                Console.WriteLine("Сохранить на диск? (y/n)");
+                var answer = Console.ReadLine();
+                if (answer == "y")
+                    SaveToFile(output);
 
                 break;
             }
         }
 
-        private static void AskQuestion(Action<string> action, string question, string output)
-        {
-            Console.WriteLine(question);
-            var answer = Console.ReadLine();
-            if (answer == "y")
-                action(output);
-        }
-
         private static void SaveToFile(string output)
         {
-            File.WriteAllText(Filename, output);
-        }
+            var path = ConfigurationManager.AppSettings["SaveFileLocation"];
+            var fullpath = Path.Combine(path, Filename);
 
-        static void SendMail(string messageBody)
-        {
-            Console.WriteLine("Письмо как будто отправлено...");
+            try
+            {
+                File.WriteAllText(fullpath, output);
+                Console.WriteLine($"Успешно сохранено по пути: \"{fullpath}\"");
+            }
+            catch(UnauthorizedAccessException)
+            {
+                Console.WriteLine($"Невозможно сохранить файл по выбранному пути: \"{path}\". Доступ запрещен.");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
     } 
 }
